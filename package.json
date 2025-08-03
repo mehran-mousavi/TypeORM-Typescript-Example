@@ -1,0 +1,17 @@
+{
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  },
+  "scripts": {
+    "start": "tsc && node ./dist/index.js",
+    "typeorm": "ts-node ./node_modules/typeorm/cli.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.1",
+    "reflect-metadata": "^0.2.2",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.25"
+  }
+}
