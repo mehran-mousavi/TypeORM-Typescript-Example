@@ -1,6 +1,7 @@
 import { Repository } from "typeorm";
 import { AppDataSource } from "../data-source";
 import { User } from "../entity/User";
+import { Post } from "../entity/Post";
 
 export class UserRepository {
   private repository: Repository<User>;
@@ -18,23 +19,32 @@ export class UserRepository {
   }
 
   /**
-   * Find all users
+   * Find all users, optionally load posts
    */
-  async findAll(): Promise<User[]> {
+  async findAll(withPosts: boolean = false): Promise<User[]> {
+    if (withPosts) {
+      return await this.repository.find({ relations: ["posts"] });
+    }
     return await this.repository.find();
   }
 
   /**
-   * Find user by id
+   * Find user by id, optionally load posts
    */
-  async findById(id: number): Promise<User | null> {
+  async findById(id: number, withPosts: boolean = false): Promise<User | null> {
+    if (withPosts) {
+      return await this.repository.findOne({ where: { id }, relations: ["posts"] });
+    }
     return await this.repository.findOneBy({ id });
   }
 
   /**
-   * Find user by email
+   * Find user by email, optionally load posts
    */
-  async findByEmail(email: string): Promise<User | null> {
+  async findByEmail(email: string, withPosts: boolean = false): Promise<User | null> {
+    if (withPosts) {
+      return await this.repository.findOne({ where: { email }, relations: ["posts"] });
+    }
     return await this.repository.findOneBy({ email });
   }
 
@@ -63,13 +73,29 @@ export class UserRepository {
   }
 
   /**
-   * Find users with pagination
+   * Find users with pagination, optionally load posts
    */
-  async findWithPagination(page: number = 1, limit: number = 10): Promise<{ users: User[], total: number }> {
+  async findWithPagination(page: number = 1, limit: number = 10, withPosts: boolean = false): Promise<{ users: User[], total: number }> {
+    if (withPosts) {
+      const [users, total] = await this.repository.findAndCount({
+        skip: (page - 1) * limit,
+        take: limit,
+        relations: ["posts"],
+      });
+      return { users, total };
+    }
     const [users, total] = await this.repository.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
     });
     return { users, total };
+  }
+
+  /**
+   * Load posts for a user by user id
+   */
+  async loadPosts(userId: number): Promise<Post[]> {
+    const user = await this.repository.findOne({ where: { id: userId }, relations: ["posts"] });
+    return user?.posts || [];
   }
 }
