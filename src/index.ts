@@ -31,7 +31,3 @@ AppDataSource.initialize().then(async () => {
 }).catch((error) => {
   console.error("Error during Data Source initialization", error);
 });
-
-
-
-console.log("DB_SYNCHRONIZE",process.env.DB_SYNCHRONIZE);
