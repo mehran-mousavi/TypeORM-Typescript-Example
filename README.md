@@ -17,6 +17,7 @@ A comprehensive **TypeORM** example project demonstrating modern TypeScript patt
 - 🔍 **Pagination Support** - Built-in pagination for large datasets
 - ⚙️ **Environment Configuration** - Flexible setup with environment variables
 - 🧪 **Production Ready** - Environment-aware configuration for different deployment stages
+- 📝 **User-Post Relations** - One-to-many relation between users and posts, with full repository support
 
 ## 📋 Table of Contents
 
@@ -54,7 +55,7 @@ A comprehensive **TypeORM** example project demonstrating modern TypeScript patt
 
 That's it! The application will:
 - Initialize the SQLite database
-- Create sample users
+- Create sample users and posts
 - Demonstrate various database operations
 - Display results in the console
 
@@ -64,9 +65,11 @@ That's it! The application will:
 typescript_course/
 ├── src/
 │   ├── entity/
-│   │   └── User.ts          # User entity definition
+│   │   ├── User.ts          # User entity definition
+│   │   └── Post.ts          # Post entity definition
 │   ├── repository/
-│   │   └── UserRepository.ts # Custom repository with CRUD operations
+│   │   ├── UserRepository.ts # Custom repository with CRUD operations for users
+│   │   └── PostRepository.ts # Custom repository with CRUD operations for posts
 │   ├── migrations/          # Database migrations (optional)
 │   ├── data-source.ts       # TypeORM data source configuration
 │   └── index.ts            # Main application entry point
@@ -77,42 +80,63 @@ typescript_course/
 
 ## 💡 Usage Examples
 
-### Creating Users
+### Creating Users and Posts
 
 ```typescript
 const userRepository = new UserRepository();
+const postRepository = new PostRepository();
 
 const newUser = await userRepository.create({
   name: "John Doe",
   email: "john@example.com"
 });
+
+const post1 = await postRepository.create({
+  title: "First Post",
+  content: "This is the first post.",
+  user: newUser
+});
+
+const post2 = await postRepository.create({
+  title: "Second Post",
+  content: "This is the second post.",
+  user: newUser
+});
 ```
 
-### Querying Users
+### Querying Users and Posts
 
 ```typescript
-// Find all users
-const users = await userRepository.findAll();
+// Find all users with their posts
+const usersWithPosts = await userRepository.findAll(true);
 
-// Find by email
-const user = await userRepository.findByEmail("john@example.com");
+// Find user by email with posts
+const user = await userRepository.findByEmail("john@example.com", true);
 
-// Find with pagination
-const { users, total } = await userRepository.findWithPagination(1, 10);
+// Find all posts with their user
+const postsWithUser = await postRepository.findAll(true);
+
+// Find posts by user id
+const posts = await postRepository.findByUserId(newUser.id);
 ```
 
-### Updating Users
+### Updating Users and Posts
 
 ```typescript
 const updatedUser = await userRepository.update(1, {
   name: "Jane Doe"
 });
+
+const updatedPost = await postRepository.update(1, {
+  title: "Updated Title"
+});
 ```
 
-### Deleting Users
+### Deleting Users and Posts
 
 ```typescript
-const isDeleted = await userRepository.delete(1);
+const isUserDeleted = await userRepository.delete(1);
+const isPostDeleted = await postRepository.delete(1);
 ```
 
 ## 🔧 API Reference
@@ -122,13 +146,25 @@ const isDeleted = await userRepository.delete(1);
 | Method | Description | Parameters | Returns |
 |--------|-------------|------------|---------|
 | `create(userData)` | Create a new user | `Partial<User>` | `Promise<User>` |
-| `findAll()` | Get all users | - | `Promise<User[]>` |
-| `findById(id)` | Find user by ID | `number` | `Promise<User \| null>` |
-| `findByEmail(email)` | Find user by email | `string` | `Promise<User \| null>` |
+| `findAll(withPosts?)` | Get all users, optionally with posts | `boolean?` | `Promise<User[]>` |
+| `findById(id, withPosts?)` | Find user by ID, optionally with posts | `number, boolean?` | `Promise<User \| null>` |
+| `findByEmail(email, withPosts?)` | Find user by email, optionally with posts | `string, boolean?` | `Promise<User \| null>` |
 | `update(id, userData)` | Update user | `number, Partial<User>` | `Promise<User \| null>` |
 | `delete(id)` | Delete user | `number` | `Promise<boolean>` |
 | `existsByEmail(email)` | Check if email exists | `string` | `Promise<boolean>` |
-| `findWithPagination(page, limit)` | Get paginated users | `number, number` | `Promise<{users: User[], total: number}>` |
+| `findWithPagination(page, limit, withPosts?)` | Get paginated users, optionally with posts | `number, number, boolean?` | `Promise<{users: User[], total: number}>` |
+| `loadPosts(userId)` | Get posts for a user | `number` | `Promise<Post[]>` |
+
+### PostRepository Methods
+
+| Method | Description | Parameters | Returns |
+|--------|-------------|------------|---------|
+| `create(postData)` | Create a new post | `Partial<Post>` | `Promise<Post>` |
+| `findAll(withUser?)` | Get all posts, optionally with user | `boolean?` | `Promise<Post[]>` |
+| `findById(id, withUser?)` | Find post by ID, optionally with user | `number, boolean?` | `Promise<Post \| null>` |
+| `update(id, postData)` | Update post | `number, Partial<Post>` | `Promise<Post \| null>` |
+| `delete(id)` | Delete post | `number` | `Promise<boolean>` |
+| `findByUserId(userId, withUser?)` | Get posts by user id, optionally with user | `number, boolean?` | `Promise<Post[]>` |
 
 ### User Entity
 
@@ -137,6 +173,18 @@ interface User {
   id: number;          // Auto-generated primary key
   name: string;        // User's full name
   email: string;       // Unique email address
+  posts: Post[];       // User's posts
+}
+```
+
+### Post Entity
+
+```typescript
+interface Post {
+  id: number;          // Auto-generated primary key
+  title: string;       // Post title
+  content: string;     // Post content
+  user: User;          // Author (User)
 }
 ```
 
